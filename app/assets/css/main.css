@@ -1,0 +1,64 @@
+/* ── Dark mode variant (Tailwind v4 + @nuxtjs/color-mode class strategy) ── */
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* ── Mobile bottom-sheet transition ──────────────────────────────────────── */
+.sheet-enter-active,
+.sheet-leave-active {
+  transition: opacity 0.25s ease;
+}
+.sheet-enter-active .relative,
+.sheet-leave-active .relative {
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.sheet-enter-from,
+.sheet-leave-to {
+  opacity: 0;
+}
+.sheet-enter-from .relative {
+  transform: translateY(100%);
+}
+.sheet-leave-to .relative {
+  transform: translateY(100%);
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(113, 113, 122, 0.3);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(113, 113, 122, 0.5);
+}
+
+/* ── Theme icon swap animation ──────────────────────────────────────────── */
+.theme-icon-enter-active,
+.theme-icon-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.theme-icon-enter-from {
+  opacity: 0;
+  transform: rotate(-45deg) scale(0.7);
+}
+.theme-icon-leave-to {
+  opacity: 0;
+  transform: rotate(45deg) scale(0.7);
+}
