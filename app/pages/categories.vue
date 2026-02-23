@@ -70,11 +70,19 @@
               </svg>
             </div>
             <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-1">Delete "{{ deleteTarget.name }}"?</h3>
-            <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-5">Tasks in this category will become uncategorized.</p>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-1">
+              This action cannot be undone.
+            </p>
+            <p v-if="deleteTarget.taskCount > 0" class="text-xs font-medium text-red-500 dark:text-red-400 mb-5">
+              ⚠️ {{ deleteTarget.taskCount }} task{{ deleteTarget.taskCount > 1 ? 's' : '' }} in this category will also be permanently deleted.
+            </p>
+            <p v-else class="text-xs text-zinc-400 dark:text-zinc-500 mb-5">
+              This category has no tasks.
+            </p>
             <div class="flex items-center justify-end gap-2">
               <button @click="deleteTarget = null" class="px-4 py-2 text-sm rounded-xl text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">Cancel</button>
               <button @click="executeDelete" :disabled="deleting" class="px-4 py-2 text-sm font-medium rounded-xl bg-red-500 hover:bg-red-600 text-white disabled:opacity-50 transition-all shadow-sm">
-                {{ deleting ? 'Deleting…' : 'Delete' }}
+                {{ deleting ? 'Deleting…' : deleteTarget.taskCount > 0 ? `Delete category + ${deleteTarget.taskCount} task${deleteTarget.taskCount > 1 ? 's' : ''}` : 'Delete category' }}
               </button>
             </div>
           </div>
@@ -103,11 +111,12 @@ function openCreate() { editId.value = null; formOpen.value = true }
 function openEdit(id: string) { editId.value = id; formOpen.value = true }
 
 // ── Delete ────────────────────────────────────────────────────────────────────
-const deleteTarget = ref<{ id: string; name: string } | null>(null)
+const deleteTarget = ref<{ id: string; name: string; taskCount: number } | null>(null)
 const deleting = ref(false)
 
 function confirmDelete(id: string, name: string) {
-  deleteTarget.value = { id, name }
+  const taskCount = todoStore.todos.filter(t => t.categoryId === id).length
+  deleteTarget.value = { id, name, taskCount }
 }
 
 async function executeDelete() {

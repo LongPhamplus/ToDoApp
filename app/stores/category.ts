@@ -48,6 +48,8 @@ export const useCategoryStore = defineStore('category', () => {
   async function deleteCategory(id: string) {
     await $fetch(`/api/categories/${id}`, { method: 'DELETE' })
     categories.value = categories.value.filter(c => c._id !== id)
+    // Refresh todos since tasks in this category were deleted on the server
+    await useTodoStore().fetchTodos()
   }
 
   const getCategoryById = (id: string) =>

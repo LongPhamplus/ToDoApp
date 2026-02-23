@@ -28,13 +28,8 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
       }
     }
 
-    // Get the "Khác" (Other) category for this user
-    const otherCategory = await Category.findOne({ name: 'Khác', userId: event.context.userId })
-
-    // Move all todos to "Khác" category if it exists
-    if (otherCategory) {
-      await Todo.updateMany({ categoryId: id, userId: event.context.userId }, { categoryId: otherCategory._id })
-    }
+    // Delete all todos belonging to this category
+    const deleteResult = await Todo.deleteMany({ categoryId: id, userId: event.context.userId })
 
     // Delete the category
     await Category.findOneAndDelete({ _id: id, userId: event.context.userId })
@@ -42,6 +37,7 @@ export default defineEventHandler(async (event): Promise<ApiResponse<any>> => {
     return {
       success: true,
       message: 'Category deleted successfully',
+      data: { deletedTodos: deleteResult.deletedCount },
     }
   } catch (error: any) {
     console.error('❌ Error deleting category:', error)
