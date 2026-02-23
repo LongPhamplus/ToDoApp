@@ -62,27 +62,16 @@ export default defineNuxtConfig({
     transpile: ['mongoose'],
   },
 
-  // Nitro — externalize mongoose/mongodb so they stay as CJS requires
+  // Nitro
   nitro: {
     preset: 'vercel',
     externals: {
       external: ['mongoose', 'mongodb'],
-    },
-    hooks: {
-      // Nitro hardcodes "type":"module" in the output package.json, but
-      // mongoose/mongodb are CJS and can't resolve imports without .js extension
-      // under ESM strict mode. Remove it after build so Node treats them as CJS.
-      compiled: async (nitro) => {
-        const { writeFileSync, readFileSync, existsSync } = await import('node:fs')
-        // nitro.options.output.serverDir = .vercel/output/functions/__fallback.func
-        const pkgPath = nitro.options.output.serverDir + '/package.json'
-        if (existsSync(pkgPath)) {
-          const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
-          delete pkg.type
-          writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
-          console.log('[fix] Removed "type":"module" from', pkgPath)
-        }
-      },
+      traceInclude: [
+        'node_modules/mongoose/lib/**',
+        'node_modules/mongodb/lib/**',
+        'node_modules/bson/lib/**',
+      ],
     },
   },
 })

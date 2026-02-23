@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
+    "postbuild": "node -e \"const fs=require('fs');const p='.vercel/output/functions/__fallback.func/package.json';if(fs.existsSync(p)){const pkg=JSON.parse(fs.readFileSync(p,'utf-8'));delete pkg.type;fs.writeFileSync(p,JSON.stringify(pkg,null,2));console.log('[postbuild] Removed type:module from output package.json')}\"",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
