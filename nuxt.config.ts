@@ -68,5 +68,19 @@ export default defineNuxtConfig({
     externals: {
       external: ['mongoose', 'mongodb'],
     },
+    hooks: {
+      compiled: async (nitro) => {
+        // Remove "type": "module" from the output package.json so Node
+        // treats .js files as CommonJS (required for mongoose/mongodb CJS)
+        const { writeFileSync, readFileSync, existsSync } = await import('node:fs')
+        const { join } = await import('node:path')
+        const pkgPath = join(nitro.options.output.serverDir, 'package.json')
+        if (existsSync(pkgPath)) {
+          const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
+          delete pkg.type
+          writeFileSync(pkgPath, JSON.stringify(pkg, null, 2))
+        }
+      },
+    },
   },
 })
