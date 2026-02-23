@@ -59,13 +59,14 @@ export default defineNuxtConfig({
   
   // Build
   build: {
-    transpile: ['mongoose']
+    transpile: ['mongoose'],
   },
 
   // Nitro
   nitro: {
+    preset: 'vercel',
     externals: {
-      inline: ['mongoose']
-    }
-  }
+      external: ['mongoose', 'mongodb'],
+    },
+  },
 })
