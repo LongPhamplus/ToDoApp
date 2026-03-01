@@ -33,6 +33,7 @@
                 <span v-if="task.deadline" :class="['text-[11px]', isOverdue ? 'text-red-400' : 'text-zinc-400']">
                   📅 {{ formatDate(task.deadline) }}
                 </span>
+                <span v-else class="text-[11px] text-zinc-400">Chưa có deadline</span>
               </div>
             </div>
             <button @click="$emit('update:modelValue', false)" class="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0">
@@ -77,6 +78,66 @@
                   {{ req.content }}
                 </li>
               </ul>
+            </div>
+
+            <!-- Deadline editor -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <p class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Deadline</p>
+                <button
+                  v-if="!editingDeadline"
+                  @click="startEditDeadline"
+                  class="text-[11px] font-medium text-indigo-500 hover:text-indigo-600 px-2 py-0.5 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all"
+                >
+                  {{ task.deadline ? 'Sửa' : 'Thêm' }}
+                </button>
+              </div>
+
+              <!-- Display mode -->
+              <div v-if="!editingDeadline"
+                class="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700"
+              >
+                <svg class="w-3.5 h-3.5 shrink-0" :class="isOverdue ? 'text-red-400' : 'text-zinc-400'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span v-if="task.deadline" class="text-sm font-medium" :class="isOverdue ? 'text-red-500' : 'text-zinc-700 dark:text-zinc-300'">
+                  {{ formatFull(task.deadline) }}
+                </span>
+                <span v-else class="text-sm text-zinc-400 dark:text-zinc-500 italic">Chưa đặt deadline</span>
+              </div>
+
+              <!-- Edit mode -->
+              <div v-else class="flex items-center gap-2">
+                <input
+                  v-model="deadlineInput"
+                  type="datetime-local"
+                  class="flex-1 px-3 py-2 text-sm rounded-xl border border-indigo-300 dark:border-indigo-500/50 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                />
+                <button
+                  @click="saveDeadline"
+                  :disabled="savingDeadline"
+                  class="px-3 py-2 text-sm font-medium rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white disabled:opacity-50 transition-all shadow-sm shrink-0"
+                >
+                  {{ savingDeadline ? '…' : 'Lưu' }}
+                </button>
+                <button
+                  @click="cancelEditDeadline"
+                  class="px-3 py-2 text-sm rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0"
+                >
+                  Huỷ
+                </button>
+                <button
+                  v-if="task.deadline"
+                  @click="clearDeadline"
+                  :disabled="savingDeadline"
+                  class="p-2 text-sm rounded-xl text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all shrink-0"
+                  title="Xoá deadline"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <!-- Dates -->
@@ -143,16 +204,67 @@ const priorityClass: Record<string, string> = {
 function formatDate(d: string | null) {
   if (!d) return ''
   const date = new Date(d)
-  const diff = (date.getTime() - Date.now()) / 86400000
-  if (diff < -1) return `${Math.ceil(-diff)}d overdue`
-  if (diff < 0) return 'Yesterday'
-  if (diff < 1) return 'Today'
-  if (diff < 2) return 'Tomorrow'
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const now = new Date()
+  const diff = date.getTime() - now.getTime()
+  const days = Math.floor(diff / 86400000)
+  const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+  if (diff < 0) {
+    const absDiff = Math.abs(diff)
+    if (absDiff < 86400000) return `Quá hạn lúc ${timeStr}`
+    return `${Math.ceil(absDiff / 86400000)}d quá hạn`
+  }
+  if (diff < 86400000) return `Hôm nay ${timeStr}`
+  if (days === 1) return `Ngày mai ${timeStr}`
+  return `${date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} ${timeStr}`
 }
 
 function formatFull(d: string) {
-  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return new Date(d).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+// ── Edit deadline ──────────────────────────────────────────────────────────────
+const editingDeadline = ref(false)
+const deadlineInput = ref('')
+const savingDeadline = ref(false)
+
+function toDatetimeLocalStr(iso: string | null) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function startEditDeadline() {
+  deadlineInput.value = toDatetimeLocalStr(task.value?.deadline ?? null)
+  editingDeadline.value = true
+}
+
+function cancelEditDeadline() {
+  editingDeadline.value = false
+  deadlineInput.value = ''
+}
+
+async function saveDeadline() {
+  if (!task.value) return
+  savingDeadline.value = true
+  try {
+    const deadline = deadlineInput.value ? new Date(deadlineInput.value).toISOString() : null
+    await todoStore.updateTodo(task.value._id, { deadline } as any)
+    editingDeadline.value = false
+  } finally {
+    savingDeadline.value = false
+  }
+}
+
+async function clearDeadline() {
+  if (!task.value) return
+  savingDeadline.value = true
+  try {
+    await todoStore.updateTodo(task.value._id, { deadline: null } as any)
+    editingDeadline.value = false
+  } finally {
+    savingDeadline.value = false
+  }
 }
 
 async function deleteTask() {

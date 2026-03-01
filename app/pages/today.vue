@@ -620,14 +620,17 @@ function isUrgent(task: Todo) {
 
 function formatRelativeDate(d: string) {
   const date = new Date(d)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const diff = Math.round((date.setHours(0,0,0,0) - today.getTime()) / 86400_000)
-  if (diff === 0) return 'Hôm nay'
-  if (diff === 1) return 'Ngày mai'
-  if (diff === 2) return 'Ngày kia'
-  if (diff < 0) return `${Math.abs(diff)} ngày trước`
-  return `${diff} ngày nữa`
+  const now = new Date()
+  const diff = date.getTime() - now.getTime()
+  const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+  if (diff < 0) {
+    if (Math.abs(diff) < 86400000) return `Quá hạn lúc ${timeStr}`
+    return `${Math.ceil(Math.abs(diff) / 86400000)} ngày trước`
+  }
+  if (diff < 86400000) return `Hôm nay ${timeStr}`
+  if (diff < 172800000) return `Ngày mai ${timeStr}`
+  if (diff < 259200000) return `Ngày kia ${timeStr}`
+  return `${date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} ${timeStr}`
 }
 
 // ── Summary chips ─────────────────────────────────────────────────────────────

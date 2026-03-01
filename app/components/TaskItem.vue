@@ -127,10 +127,15 @@ const deadlineLabel = computed(() => {
   const d = new Date(props.task.deadline)
   const now = new Date()
   const diff = d.getTime() - now.getTime()
-  const days = Math.ceil(diff / 86400000)
-  if (days < 0) return `${Math.abs(days)}d overdue`
-  if (days === 0) return 'Due today'
-  if (days === 1) return 'Due tomorrow'
-  return `Due ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+  const days = Math.floor(diff / 86400000)
+  const timeStr = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+  if (diff < 0) {
+    const absDiff = Math.abs(diff)
+    if (absDiff < 86400000) return `Quá hạn lúc ${timeStr}`
+    return `${Math.ceil(absDiff / 86400000)}d overdue`
+  }
+  if (diff < 86400000) return `Hôm nay ${timeStr}`
+  if (days === 1) return `Ngày mai ${timeStr}`
+  return `${d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} ${timeStr}`
 })
 </script>
